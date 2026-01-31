@@ -1,0 +1,104 @@
+
+State Machine - |project|top_state
+Name top_state.state_bit_1 top_state.state_bit_0 
+top_state.S_IDLE 0 0 
+top_state.S_UART_RX 1 0 
+top_state.S_RUN_M1 1 1 
+top_state.S_RUN_M2 0 1 
+
+State Machine - |project|M2_module:M2_unit|state_cs
+Name state_cs.state_bit_1 state_cs.state_bit_0 
+state_cs.S_CSL 0 0 
+state_cs.S_CS1 0 1 
+state_cs.S_CS2 1 0 
+state_cs.S_CS3 1 1 
+
+State Machine - |project|M2_module:M2_unit|state_ws
+Name state_ws.state_bit_0 
+state_ws.WS_LOAD 0 
+state_ws.WS_WRITE 1 
+
+State Machine - |project|M2_module:M2_unit|state_ct
+Name state_ct.state_bit_1 state_ct.state_bit_0 
+state_ct.S_CTL 0 0 
+state_ct.S_CT1 0 1 
+state_ct.S_CT2 1 0 
+state_ct.S_CT3 1 1 
+
+State Machine - |project|M2_module:M2_unit|state_fs
+Name state_fs.state_bit_2 state_fs.state_bit_1 state_fs.state_bit_0 
+state_fs.FS_0 0 0 0 
+state_fs.FS_1 0 0 1 
+state_fs.FS_RUN 0 1 0 
+state_fs.FS_L1 0 1 1 
+state_fs.FS_L2 1 0 0 
+state_fs.FS_L3 1 0 1 
+state_fs.FS_DONE 1 1 0 
+
+State Machine - |project|M2_module:M2_unit|state
+Name state.state_bit_2 state.state_bit_1 state.state_bit_0 
+state.S_IDLE_M2 0 0 0 
+state.S_FS 0 1 0 
+state.S_CT 1 0 0 
+state.S_MA 1 1 0 
+state.S_MB 1 0 1 
+state.S_CS 1 1 1 
+state.S_WS 0 1 1 
+
+State Machine - |project|M1_module:M1_unit|state
+Name state.state_bit_4 state.state_bit_3 state.state_bit_2 state.state_bit_1 state.state_bit_0 
+state.S_IDLE_M1 0 0 0 0 0 
+state.S_PL0 0 0 0 1 0 
+state.S_PL1 0 0 1 1 0 
+state.S_PL2 0 0 1 0 0 
+state.S_PL3 0 1 0 0 0 
+state.S_PL4 0 1 0 1 0 
+state.S_PL5 0 1 1 0 0 
+state.S_PL6 0 1 1 1 0 
+state.S_PL7 1 0 0 0 0 
+state.S_PL8 1 0 0 1 0 
+state.S_PL9 1 0 1 0 0 
+state.S_C1 1 0 1 1 0 
+state.S_C2 1 1 0 0 0 
+state.S_C3 1 1 0 1 0 
+state.S_C4 1 1 1 0 0 
+state.S_C5 1 1 1 1 0 
+state.S_C6 0 0 0 0 1 
+state.S_C7 0 0 0 1 1 
+state.S_C8 0 0 1 0 1 
+state.S_L0 0 0 1 1 1 
+state.S_L1 0 1 0 0 1 
+state.S_L2 0 1 0 1 1 
+state.S_L3 0 1 1 0 1 
+state.S_L4 0 1 1 1 1 
+state.S_DONE 1 0 0 0 1 
+
+State Machine - |project|UART_SRAM_interface:UART_unit|UART_SRAM_state
+Name UART_SRAM_state.state_bit_2 UART_SRAM_state.state_bit_1 UART_SRAM_state.state_bit_0 
+UART_SRAM_state.S_US_IDLE 0 0 0 
+UART_SRAM_state.S_US_STRIP_FILE_HEADER_1 1 0 1 
+UART_SRAM_state.S_US_STRIP_FILE_HEADER_2 0 1 0 
+UART_SRAM_state.S_US_START_FIRST_BYTE_RECEIVE 0 0 1 
+UART_SRAM_state.S_US_WRITE_FIRST_BYTE 1 0 0 
+UART_SRAM_state.S_US_START_SECOND_BYTE_RECEIVE 1 1 0 
+UART_SRAM_state.S_US_WRITE_SECOND_BYTE 0 1 1 
+
+State Machine - |project|UART_SRAM_interface:UART_unit|UART_receive_controller:UART_RX|RXC_state
+Name RXC_state.state_bit_1 RXC_state.state_bit_0 
+RXC_state.S_RXC_IDLE 0 0 
+RXC_state.S_RXC_SYNC 0 1 
+RXC_state.S_RXC_ASSEMBLE_DATA 1 0 
+RXC_state.S_RXC_STOP_BIT 1 1 
+
+State Machine - |project|VGA_SRAM_interface:VGA_unit|VGA_SRAM_state
+Name VGA_SRAM_state.state_bit_3 VGA_SRAM_state.state_bit_2 VGA_SRAM_state.state_bit_1 VGA_SRAM_state.state_bit_0 
+VGA_SRAM_state.S_VS_WAIT_NEW_PIXEL_ROW 0 0 0 0 
+VGA_SRAM_state.S_VS_NEW_PIXEL_ROW_DELAY_1 1 0 0 0 
+VGA_SRAM_state.S_VS_NEW_PIXEL_ROW_DELAY_2 1 0 0 1 
+VGA_SRAM_state.S_VS_NEW_PIXEL_ROW_DELAY_3 0 0 0 1 
+VGA_SRAM_state.S_VS_NEW_PIXEL_ROW_DELAY_4 0 0 1 0 
+VGA_SRAM_state.S_VS_NEW_PIXEL_ROW_DELAY_5 1 0 1 0 
+VGA_SRAM_state.S_VS_FETCH_PIXEL_DATA_0 0 0 1 1 
+VGA_SRAM_state.S_VS_FETCH_PIXEL_DATA_1 1 0 1 1 
+VGA_SRAM_state.S_VS_FETCH_PIXEL_DATA_2 1 1 0 0 
+VGA_SRAM_state.S_VS_FETCH_PIXEL_DATA_3 0 1 0 0 
