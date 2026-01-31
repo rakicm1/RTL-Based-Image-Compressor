@@ -1,0 +1,266 @@
+/*
+Work by Matthew Rakic & James Cameron
+Aspiring Computer Engineers
+McMaster University
+Ontario, Canada
+*/
+
+`timescale 1ns/100ps
+`ifndef DISABLE_DEFAULT_NET
+`default_nettype none
+`endif
+
+`include "define_M2_state.h"
+
+module M2_module (
+    input  logic        Clock,
+    input  logic        Resetn,
+    input  logic        Start,
+    output logic        Done,
+
+    // External SRAM interface
+    input  logic [15:0] SRAM_read_data,
+    output logic [17:0] SRAM_address,
+    output logic [15:0] SRAM_write_data,
+    output logic        SRAM_we_n
+);
+
+// ===============================================================
+//  STATE MACHINE DECLARATION
+// ===============================================================
+M2_state_type state, next_state;
+
+// ===============================================================
+//  INTERNAL RAM SIGNALS
+// ===============================================================
+
+logic [31:0] T_read_word;
+logic [31:0] S_read_word;
+
+logic [8:0]  ram_read_addr;
+logic [8:0]  ram_write_addr;
+
+logic [31:0] ram_write_data0;
+logic [31:0] ram_write_data1;
+logic [31:0] ram_write_data2;
+logic [31:0] ram_write_data3;
+
+logic        ram_we0;
+logic        ram_we1;
+logic        ram_we2;
+logic        ram_we3;
+
+// ===============================================================
+//  BLOCK + PIXEL COUNTERS
+// ===============================================================
+
+// 16×16 pixel counters
+logic [3:0] Ri;  
+logic [3:0] Ci;
+
+// Luma 192×144 → 12×9 blocks → 108 blocks
+logic [3:0] Rb;  
+logic [3:0] Cb;
+
+// SRAM latency micro-pipeline
+logic [1:0] fs_stage;    
+
+// S′ buffer index (0..127)
+logic [8:0]  sprime_index;         
+
+logic [17:0] sram_addr_next;
+logic [15:0] sprime_temp;
+
+
+
+
+// ===============================================================
+//  INSTANTIATE 4 DUAL-PORT RAMs
+// ===============================================================
+
+dual_port_RAM0 RAM_inst0 (
+    .address_a (ram_read_addr),
+    .address_b (ram_write_addr),
+    .clock     (Clock),
+    .data_a    (32'd0),
+    .data_b    (ram_write_data0),
+    .wren_a    (1'b0),
+    .wren_b    (ram_we0),
+    .q_a       (),
+    .q_b       ()
+);
+
+dual_port_RAM1 RAM_inst1 (
+    .address_a (ram_read_addr),
+    .address_b (ram_write_addr),
+    .clock     (Clock),
+    .data_a    (32'd0),
+    .data_b    (ram_write_data1),
+    .wren_a    (1'b0),
+    .wren_b    (ram_we1),
+    .q_a       (),
+    .q_b       (T_read_word)
+);
+
+dual_port_RAM2 RAM_inst2 (
+    .address_a (ram_read_addr),
+    .address_b (ram_write_addr),
+    .clock     (Clock),
+    .data_a    (32'd0),
+    .data_b    (ram_write_data2),
+    .wren_a    (1'b0),
+    .wren_b    (ram_we2),
+    .q_a       (),
+    .q_b       (S_read_word)
+);
+
+dual_port_RAM3 RAM_inst3 (
+    .address_a (ram_read_addr),
+    .address_b (ram_write_addr),
+    .clock     (Clock),
+    .data_a    (32'd0),
+    .data_b    (ram_write_data3),
+    .wren_a    (1'b0),
+    .wren_b    (ram_we3),
+    .q_a       (),
+    .q_b       ()
+);
+
+
+// ===============================================================
+//  STATE REGISTER
+// ===============================================================
+always_ff @(posedge Clock or negedge Resetn) begin
+    if (!Resetn) begin
+        state <= S_IDLE;
+
+        Ri <= 0;
+        Ci <= 0;
+        Rb <= 0;
+        Cb <= 0;
+
+        sprime_index <= 0;
+        fs_stage <= 0;
+
+    end else begin
+        state <= next_state;
+
+        // =======================================================
+        // FETCH S′ MICROPIPELINE
+        // =======================================================
+        if (state == S_FS) begin
+            case (fs_stage)
+
+                // --------------------------------------------
+                // Cycle 0: Issue SRAM read address
+                // --------------------------------------------
+                2'd0: begin
+                    sram_addr_next <= (192 * Rb) + (Ri * 16) + Ci;
+                    fs_stage <= 2'd1;
+                end
+
+                // --------------------------------------------
+                // Cycle 1: Capture SRAM data, write into RAM0
+                // --------------------------------------------
+                2'd1: begin
+                    sprime_temp <= SRAM_read_data;
+
+                    ram_we0 <= 1'b1;
+                    ram_write_addr <= sprime_index;
+                    ram_write_data0 <= {16'd0, SRAM_read_data};
+
+                    sprime_index <= sprime_index + 1;
+
+                    // Advance pixel counters
+                    if (Ci == 4'd15) begin
+                        Ci <= 0;
+                        Ri <= Ri + 1;
+                    end else begin
+                        Ci <= Ci + 1;
+                    end
+
+                    fs_stage <= 2'd0;
+                end
+            endcase
+        end
+    end
+end
+
+
+
+// ===============================================================
+// NEXT STATE + OUTPUT LOGIC
+// ===============================================================
+always_comb begin
+
+    next_state = state;
+    Done = 1'b0;
+
+    // Default RAM WE = off
+    ram_we0 = 1'b0;
+    ram_we1 = 1'b0;
+    ram_we2 = 1'b0;
+    ram_we3 = 1'b0;
+
+    // Default write data
+    ram_write_data0 = 32'd0;
+    ram_write_data1 = 32'd0;
+    ram_write_data2 = 32'd0;
+    ram_write_data3 = 32'd0;
+
+    // Default SRAM interface
+    SRAM_address = sram_addr_next;
+    SRAM_we_n = 1'b1;
+    SRAM_write_data = 16'd0;
+
+    case (state)
+
+    // -----------------------------------------------------------
+    // IDLE
+    // -----------------------------------------------------------
+    S_IDLE: begin
+        if (Start) begin
+            Ri = 0; Ci = 0;
+            sprime_index = 0;
+            fs_stage = 0;
+            next_state = S_FS;
+        end
+    end
+
+    // -----------------------------------------------------------
+    // FETCH S′ (16×16 = 256 pixels → 128 words)
+    // -----------------------------------------------------------
+    S_FS: begin
+
+        // Supply the active SRAM address only during fs_stage == 0
+        if (fs_stage == 0)
+            SRAM_address = sram_addr_next;
+
+        // Detect last pixel:
+        if (Ri == 4'd15 && Ci == 4'd15 && fs_stage == 1) begin
+            next_state = S_CT;
+        end
+    end
+
+
+    // -----------------------------------------------------------
+    S_CT: begin
+        // TODO: row×column multiply loops here
+    end
+
+    // -----------------------------------------------------------
+    S_CS: begin
+        // TODO: column pass here
+    end
+
+    // -----------------------------------------------------------
+    S_WS: begin
+        // TODO: writeback to SRAM
+        Done = 1'b1;
+        next_state = S_IDLE;
+    end
+
+    endcase
+end
+
+endmodule

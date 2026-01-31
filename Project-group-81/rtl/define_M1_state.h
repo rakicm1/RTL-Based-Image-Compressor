@@ -1,0 +1,35 @@
+`ifndef DEFINE_M1_STATE
+
+
+typedef enum logic [4:0] {
+    S_IDLE_M1,        
+    S_PL0,   
+    S_PL1,
+	 S_PL2,
+	 S_PL3,
+	 S_PL4,
+	 S_PL5,
+	 S_PL6,
+	 S_PL7,
+	 S_PL8,
+	 S_PL9,
+	 S_C1,
+	 S_C2,
+	 S_C3,
+	 S_C4,
+	 S_C5,
+	 S_C6,
+	 S_C7,
+	 S_C8,
+	 S_C9,
+	 S_L0,
+	 S_L1,
+	 S_L2,
+	 S_L3,
+	 S_L4,
+    S_DONE       
+} M1_state_type;
+
+
+`define DEFINE_M1_STATE 1
+`endif

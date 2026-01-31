@@ -1,0 +1,330 @@
+
+`timescale 1ns/100ps
+`ifndef DISABLE_DEFAULT_NET
+`default_nettype none
+`endif
+
+`include "define_M1_state.h";
+
+module M1_module (
+   input  logic        Clock,
+   input  logic        Resetn,
+   input  logic        Start,
+   output logic        Done,
+
+   input  logic [15:0] SRAM_read_data,
+   output logic [17:0] SRAM_address,
+   output logic [15:0] SRAM_write_data,
+   output logic        SRAM_we_n
+);
+
+M1_state_type state;
+
+logic [7:0] row, col;
+
+logic [7:0] U_regs [9:0];
+logic [7:0] V_regs [9:0];
+logic [7:0] Y_even, Y_odd; 
+
+logic [7:0] R_even, G_even, B_even, R_odd, G_odd, B_odd;
+
+logic [12:0] counter;
+
+localparam Y_BASE   = 18'd0;
+localparam U_BASE   = 18'd13824;
+localparam V_BASE   = 18'd20736;
+localparam RGB_BASE = 18'd220672;
+
+always_comb begin
+	case(state):
+		
+		op1 = a;
+		op2 = b;
+		op3 = c;
+		op4 = d;
+		op5 = e;
+		op6 = f;
+		op7 = g;
+		op8 = h;
+	end else begin
+		op1 = a;
+		op2 = b;
+	end
+end
+assign mult1 = op1 * op2; 
+
+always_comb begin
+	case(state):
+	
+		S_PL0: begin
+			SRAM_address = counter;
+		 end
+		S_PL1: begin
+			SRAM_address = U_BASE + (counter >> 1);
+		end
+		 S_PL2: begin
+			SRAM_address = U_BASE + (counter >> 1) + 18'd1;
+		end
+		 S_PL3: begin
+			SRAM_address = U_BASE + (counter >> 1) + 18'd2;
+		end
+		S_PL4: begin
+			SRAM_address = V_BASE + (counter >> 1);
+		end
+		S_PL5: begin
+			SRAM_address = V_BASE + (counter >> 1) + 18'd1;
+		end
+		 S_PL6: begin
+			SRAM_address = V_BASE + (counter >> 1) + 18'd2;
+			counter += 13b'1;
+		end
+		 S_PL7: begin
+			SRAM_address = U_BASE + 18'd2 + ((counter + 18'd1) >> 1) ;
+		end
+		S_PL8: begin
+			SRAM_address = V_BASE + 18'd2 + ((counter + 18'd1) >> 1) ;
+		end
+		S_PL9: begin
+		
+		end
+		S_C1: begin
+			SRAM_address = counter;
+		end
+
+		S_C2: begin
+		end
+
+		S_C3: begin
+			SRAM_address = RGB_BASE + (counter - 13'd1) * 3;
+		end
+
+		S_C4: begin
+			SRAM_address = RGB_BASE + ((counter - 13'd1) * 3) + 1;
+		end
+
+		S_C5: begin
+			SRAM_address = RGB_BASE + ((counter - 13'd1) * 3) + 2;
+			counter += 13b'1;
+		end
+
+		S_C6: begin
+			SRAM_address = U_BASE + 18'd2 + ((counter + 18'd1) >> 1) ;
+		end
+
+		S_C7: begin
+			SRAM_address = V_BASE + 18'd2 + ((counter + 18'd1) >> 1) ;
+		end
+
+		S_C8: begin
+			
+		end 
+		default: begin 
+			SRAM_address = 18'd0;
+			counter = 13'b0;
+		end
+	endcase
+end
+
+
+
+
+
+always_ff @(posedge Clock or negedge Resetn) begin
+      if (!Resetn) begin
+         state           <= S_IDLE;
+         SRAM_write_data <= 16'd0;
+         SRAM_we_n       <= 1'b1;
+         Done            <= 1'b0;
+         row             <= 10'd0;
+         col             <= 10'd0;
+			R_even 			 <= 8'b0;
+			G_even			 <= 8'b0;
+			B_even			 <= 8'b0;
+			G_odd				 <= 8'b0;
+			R_odd				 <= 8'b0;
+			B_odd				 <= 8'b0;
+			for (int i = 0; i < 10; i++) begin
+            U_regs[i] <= 8'd0;
+            V_regs[i] <= 8'd0;
+         end
+			Y_even			 <= 8'b0;
+			Y_odd   			 <= 8'b0;
+      end else begin
+         case (state)
+			
+				// ---------------------------------------------------------
+            // IDLE
+            // ---------------------------------------------------------
+            S_IDLE: begin
+               Done <= 1'b0;
+               SRAM_we_n <= 1'b1;
+               if (Start) begin
+                  state <= S_PL0;
+               end
+            end
+
+            // ---------------------------------------------------------
+            // PRELOAD (PL0–PL9)
+            // ---------------------------------------------------------
+            S_PL0: begin
+ 
+               state <= S_PL1;
+            end
+
+            S_PL1: begin
+               
+               state <= S_PL2;
+            end
+
+            S_PL2: begin
+					Y_even <= SRAM_read_data[15:8];
+               Y_odd  <= SRAM_read_data[7:0];
+               
+               state <= S_PL3;
+            end
+
+            S_PL3: begin
+					U_regs[0] <= SRAM_read_data[15:8];
+					U_regs[1] <= SRAM_read_data[15:8];
+               U_regs[2] <= SRAM_read_data[15:8];
+					U_regs[3] <= SRAM_read_data[15:8];
+					U_regs[4] <= SRAM_read_data[15:8];
+					U_regs[5] <= SRAM_read_data[7:0];
+               
+               state <= S_PL4;
+            end
+
+            S_PL4: begin
+               U_regs[6] <= SRAM_read_data[15:8];
+               U_regs[7] <= SRAM_read_data[7:0];
+               
+               state <= S_PL5;
+            end
+
+            S_PL5: begin
+               U_regs[8] <= SRAM_read_data[15:8];
+               U_regs[9] <= SRAM_read_data[7:0];
+               
+               state <= S_PL6;
+            end
+
+            S_PL6: begin
+               V_regs[0] <= SRAM_read_data[15:8];
+					V_regs[1] <= SRAM_read_data[15:8];
+					V_regs[2] <= SRAM_read_data[15:8];
+					V_regs[3] <= SRAM_read_data[15:8];
+					V_regs[4] <= SRAM_read_data[15:8];
+               V_regs[5] <= SRAM_read_data[7:0];
+               
+               state <= S_PL7;
+            end
+
+            S_PL7: begin
+               V_regs[6] <= SRAM_read_data[15:8];
+               V_regs[7] <= SRAM_read_data[7:0];
+               
+               state <= S_PL8;
+            end
+
+            S_PL8: begin
+               V_regs[8] <= SRAM_read_data[15:8];
+               V_regs[9] <= SRAM_read_data[7:0];
+               
+               state <= S_PL9;
+            end
+
+            S_PL9: begin
+               // Done preloading — go to common case loop
+					U_regs[0] <= U_regs[1];
+					U_regs[1] <= U_regs[2];
+					U_regs[2] <= U_regs[3];
+					U_regs[3] <= U_regs[4];
+					U_regs[4] <= U_regs[5];
+					U_regs[5] <= U_regs[6];
+					U_regs[6] <= U_regs[7];
+					U_regs[7] <= U_regs[8];
+					U_regs[8] <= U_regs[9];
+					U_regs[9] <= SRAM_read_data[15:8];
+					
+               state <= S_C1;
+            end
+
+            // ---------------------------------------------------------
+            // COMMON CASE (C1–C9) - continuous loop
+            // ---------------------------------------------------------
+             S_C1: begin
+					  V_regs[0] <= V_regs[1];
+					  V_regs[1] <= V_regs[2];
+					  V_regs[2] <= V_regs[3];
+					  V_regs[3] <= V_regs[4];
+					  V_regs[4] <= V_regs[5];
+					  V_regs[5] <= V_regs[6];
+					  V_regs[6] <= V_regs[7];
+					  V_regs[7] <= V_regs[8];
+					  V_regs[8] <= V_regs[9];
+					  V_regs[9] <= (counter[0] == 1 ? SRAM_read_data[15:8]: SRAM_read_data[7:0]);
+			
+					  state <= S_C2;
+				 end
+
+				 S_C2: begin
+					  SRAM_we_n <= 1'd0;
+					  SRAM_write_data <= {R_even, G_even);
+					  state <= S_C3;
+				 end
+
+				 S_C3: begin
+					  Y_even <= SRAM_read_data[15:8];
+					  Y_odd <= SRAM_read_data[7:0];
+
+					  SRAM_write_data <= {R_odd, B_even};
+
+					  state <= S_C4;
+				 end
+
+				 S_C4: begin
+					  
+					  SRAM_write_data <= {G_odd, B_odd};
+					  
+					  state <= S_C5;
+				 end
+
+				 S_C5: begin
+
+					  SRAM_we_n <= 1'd1;
+
+					  state <= S_C6;
+				 end
+
+				 S_C6: begin
+
+					  state <= S_C7;
+				 end
+
+				 S_C7: begin
+					  state <= S_C8;
+				 end
+
+				 S_C8: begin
+
+					  U_regs[0] <= U_regs[1];
+					  U_regs[1] <= U_regs[2];
+					  U_regs[2] <= U_regs[3];
+					  U_regs[3] <= U_regs[4];
+					  U_regs[4] <= U_regs[5];
+					  U_regs[5] <= U_regs[6];
+					  U_regs[6] <= U_regs[7];
+					  U_regs[7] <= U_regs[8];
+					  U_regs[8] <= U_regs[9];
+					  U_regs[9] <= (counter[0] == 1 ? SRAM_read_data[15:8]: SRAM_read_data[7:0]);
+					  
+					  state <= S_C1;
+				 end
+
+            // ---------------------------------------------------------
+            default: state <= S_IDLE;
+         endcase
+      end
+   end
+
+endmodule
