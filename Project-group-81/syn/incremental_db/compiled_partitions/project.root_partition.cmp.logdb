@@ -1,0 +1,7 @@
+v1
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,M2_module:M2_unit|lpm_mult:Mult0|mult_56t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,M2_module:M2_unit|lpm_mult:Mult2|mult_56t:auto_generated|mac_out2,
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,M2_module:M2_unit|lpm_mult:Mult1|mult_56t:auto_generated|mac_out2,
+PORT_SWAPPING,PORT_SWAP_TYPE_DSPMULT,M2_module:M2_unit|lpm_mult:Mult1|mult_56t:auto_generated|mac_mult1,
+PORT_SWAPPING,PORT_SWAP_TYPE_DSPMULT,M2_module:M2_unit|lpm_mult:Mult2|mult_56t:auto_generated|mac_mult1,
+PORT_SWAPPING,PORT_SWAP_TYPE_DSPMULT,M2_module:M2_unit|lpm_mult:Mult0|mult_56t:auto_generated|mac_mult1,
